@@ -1,0 +1,278 @@
+-- New example script written by wally
+-- You can suggest changes with a pull request or something
+
+_G.AiBreaker = false
+_G.MobEsp =  false
+
+local camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+function esp(mob)
+   --mobname
+   local mobesp = Drawing.new("Text")
+   mobesp.Visible = true
+   mobesp.Center = true
+   mobesp.Outline = true
+   mobesp.Font = 2
+   mobesp.Size = 13
+   mobesp.Transparency = 1
+   mobesp.Color = Color3.fromRGB(255, 255, 255)
+   --mobname
+   --mobhealth
+   local mobespHealth = Drawing.new("Text")
+   mobespHealth.Visible = true
+   mobespHealth.Center = true
+   mobespHealth.Outline = true
+   mobespHealth.Font = 2
+   mobespHealth.Size = 13
+   mobespHealth.Transparency = 1
+   mobespHealth.Color = Color3.fromRGB(255, 255, 255)
+   --mobhealth
+   local RenderStepped
+   RenderStepped = RunService.RenderStepped:Connect(function()
+   if mob:FindFirstChild("Humanoid") and _G.MobEsp then
+   local mob_pos, mob_onscreen = camera:WorldToViewportPoint(mob:FindFirstChild("HumanoidRootPart").Position)
+   
+if mob_onscreen then
+   mobesp.Position = Vector2.new(mob_pos.X, mob_pos.Y)
+   mobesp.Text = mob.Name.. mob.Humanoid.Health
+   mobesp.Visible = true
+   mobespHealth.Position = Vector2.new(mob_pos.X, mob_pos.Y - 10)
+   mobespHealth.Text = "Health:".. mob.Humanoid.Health
+   mobespHealth.Visible = true
+else 
+   mobesp.Visible = false
+   mobespHealth.Visible = false
+end
+
+   else
+      mobesp.Visible = false
+	  mobespHealth.Visible = false
+	  mobespHealth:Remove()
+      mobesp:Remove()
+      RenderStepped:Disconnect()
+   end
+   end)
+end
+
+
+for i, mob in next, workspace.Live:GetChildren() do
+if mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") and not mob:FindFirstChild("EffectsClient") then
+esp(mob)
+end
+end
+
+workspace:FindFirstChild("Live").ChildAdded:Connect(function(mob)
+mob.ChildAdded:Connect(function(hum)
+if hum.Name == "HumanoidRootPart" and not mob:FindFirstChild("EffectsClient") then
+esp(mob)
+end
+end)
+end)
+
+workspace:FindFirstChild("Live").ChildAdded:Connect(function(mob)
+if hum.Name == "HumanoidRootPart" and not mob:FindFirstChild("EffectsClient") then
+esp(mob)
+end
+end)
+
+--aifunct
+
+local LocalPlayer = game.Players.LocalPlayer
+
+local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart')
+local LocalPlayer = game:GetService("Players").LocalPlayer
+
+local Mouse = game.Players.LocalPlayer:GetMouse()
+local Camera = game.Workspace.CurrentCamera
+       
+local function destroyai()
+if rootPart then
+rootPart.Velocity = Vector3.new(rootPart.CFrame.X, rootPart.CFrame.Y, rootPart.CFrame.Z)
+end
+end
+
+local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+
+local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+
+local Window = Library:CreateWindow({
+    -- Set Center to true if you want the menu to appear in the center
+    -- Set AutoShow to true if you want the menu to appear when it is created
+    -- Position and Size are also valid options here
+    -- but you do not need to define them unless you are changing them :)
+
+    Title = 'FreshieKiller 2.0',
+    Center = true,
+    AutoShow = true,
+    TabPadding = 8,
+    MenuFadeTime = 0.2
+})
+
+-- CALLBACK NOTE:
+-- Passing in callback functions via the initial element parameters (i.e. Callback = function(Value)...) works
+-- HOWEVER, using Toggles/Options.INDEX:OnChanged(function(Value) ... ) is the RECOMMENDED way to do this.
+-- I strongly recommend decoupling UI code from logic code. i.e. Create your UI elements FIRST, and THEN setup :OnChanged functions later.
+
+-- You do not have to set your tabs & groups up this way, just a prefrence.
+local Tabs = {
+    -- Creates a new tab titled Main
+    Main = Window:AddTab('Main'),
+    ['UI Settings'] = Window:AddTab('UI Settings'),
+}
+
+-- Groupbox and Tabbox inherit the same functions
+-- except Tabboxes you have to call the functions on a tab (Tabbox:AddTab(name))
+local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Groupbox')
+
+-- We can also get our Main tab via the following code:
+-- local LeftGroupBox = Window.Tabs.Main:AddLeftGroupbox('Groupbox')
+
+-- Tabboxes are a tiny bit different, but here's a basic example:
+--[[
+
+local TabBox = Tabs.Main:AddLeftTabbox() -- Add Tabbox on left side
+
+local Tab1 = TabBox:AddTab('Tab 1')
+local Tab2 = TabBox:AddTab('Tab 2')
+
+-- You can now call AddToggle, etc on the tabs you added to the Tabbox
+]]
+
+-- Groupbox:AddToggle
+-- Arguments: Index, Options
+LeftGroupBox:AddToggle('MyToggle', {
+    Text = 'Mob-Esp',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Enable mob esp', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+    _G.MobEsp =  Value
+    end
+})
+
+Toggles.MyToggle:SetValue(false)
+
+LeftGroupBox:AddLabel('Ai-Destroyer'):AddKeyPicker('KeyPicker', {
+    
+    Default = 'F4',
+    SyncToggleState = false,
+
+    Mode = 'Toggle',
+
+    Text = 'AiDestroy', 
+    NoUI = false, 
+
+    Callback = function(Value)
+    _G.AiBreaker = Value
+	destroyai()
+	while true do
+		if _G.AiBreaker then
+			destroyai()
+			task.wait()
+		else
+		break
+		end
+	end
+    end,
+})
+
+Options.KeyPicker:SetValue({ 'F4', 'Toggle' }) -- Sets keybind to MB2, mode to Hold
+
+LeftGroupBox:AddLabel('Fly Keybind (Hold)'):AddKeyPicker('FlySection', {
+    
+    Default = 'C', -- String as the name of the keybind (MB1, MB2 for mouse buttons)
+    SyncToggleState = false,
+
+
+    -- You can define custom Modes but I have never had a use for it.
+    Mode = 'Hold', -- Modes: Always, Toggle, Hold
+
+    Text = 'Fly', -- Text to display in the keybind menu
+    NoUI = false, -- Set to true if you want to hide from the Keybind menu,
+
+    -- Occurs when the keybind is clicked, Value is `true`/`false`
+    Callback = function(Value2)
+    print(Value2)
+    end,
+    
+    -- Occurs when the keybind itself is changed, `New` is a KeyCode Enum OR a UserInputType Enum
+})
+
+Options.FlySection:SetValue({ 'C', 'Hold' }) -- Sets keybind to MB2, mode to Hold
+
+--
+task.spawn(function()
+    while true do
+
+        -- example for checking if a keybind is being pressed
+        local state = Options.FlySection:GetState()
+        if state then
+             rootPart.Velocity = Vector3.new(Mouse.hit.Position - rootPart.Position) + Camera.CFrame.LookVector * 100
+        end
+
+        if Library.Unloaded then break end
+		task.wait()
+    end
+end)
+--
+
+
+-- Long text label to demonstrate UI scrolling behaviour.
+local TabBox = Tabs.Main:AddRightTabbox() -- Add Tabbox on right side
+
+-- Anything we can do in a Groupbox, we can do in a Tabbox tab (AddToggle, AddSlider, AddLabel, etc etc...)
+local Tab1 = TabBox:AddTab('Tab 1')
+Tab1:AddToggle('Tab1Toggle', { Text = 'Tab1 Toggle' });
+
+local Tab2 = TabBox:AddTab('Tab 2')
+Tab2:AddToggle('Tab2Toggle', { Text = 'Tab2 Toggle' });
+
+-- Dependency boxes let us control the visibility of UI elements depending on another UI elements state.
+-- e.g. we have a 'Feature Enabled' toggle, and we only want to show that features sliders, dropdowns etc when it's enabled!
+-- Dependency box example:
+local RightGroupbox = Tabs.Main:AddRightGroupbox('Groupbox #3');
+RightGroupbox:AddToggle('ControlToggle', { Text = 'Dependency box toggle' });
+
+local Depbox = RightGroupbox:AddDependencyBox();
+Depbox:AddToggle('DepboxToggle', { Text = 'Sub-dependency box toggle' });
+
+-- We can also nest dependency boxes!
+-- When we do this, our SupDepbox automatically relies on the visiblity of the Depbox - on top of whatever additional dependencies we set
+local SubDepbox = Depbox:AddDependencyBox();
+SubDepbox:AddSlider('DepboxSlider', { Text = 'Slider', Default = 50, Min = 0, Max = 100, Rounding = 0 });
+SubDepbox:AddDropdown('DepboxDropdown', { Text = 'Dropdown', Default = 1, Values = {'a', 'b', 'c'} });
+
+Depbox:SetupDependencies({
+    { Toggles.ControlToggle, true } -- We can also pass `false` if we only want our features to show when the toggle is off!
+});
+
+SubDepbox:SetupDependencies({
+    { Toggles.DepboxToggle, true }
+});
+
+
+Library:OnUnload(function()
+    WatermarkConnection:Disconnect()
+
+    print('Unloaded!')
+    Library.Unloaded = true
+end)
+
+-- Library functions
+-- Sets the watermark visibility
+
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+
+Library.KeybindFrame.Visible = true; -- todo: add a function for this
+-- UI Settings
+local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+
+-- I set NoUI so it does not show up in the keybinds menu
+MenuGroup:AddButton('Unload', function() Library:Unload() end)
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+Library:SetWatermarkVisibility(true)
+
+Library.ToggleKeybind = Options.MenuKeybind -- Allows you to have a custom keybind for the menu
