@@ -3,12 +3,46 @@
 
 _G.AiBreaker = false
 _G.MobEsp =  false
+_G.Noclip = false
 
 local camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
+local player = game:GetService("Players").localPlayer
+local character = player.Character
+
+local flyspeed = 10
+local maxDistance = 10
+
+--
+
+local Rm, Index, NIndex, NCall, Caller = getrawmetatable(game), getrawmetatable(game).index, getrawmetatable(game).newindex, getrawmetatable(game).namecall, checkcaller or is_protosmasher_caller
+
+
+Rm.newindex = newcclosure(function(self, Meme, Value)
+    if Caller() then return NIndex(self, Meme, Value) end 
+    if tostring(self) == "HumanoidRootPart" or tostring(self) == "Torso" then 
+        if Meme == "CFrame" and self:IsDescendantOf(player.Character) then 
+            return true -- Credits to ze_lI for this
+        end
+    end
+    return NIndex(self, Meme, Value)
+end)
+
+
+RunService.Stepped:Connect(function()
+    if _G.Noclip == true and player and player.Character and player.Character:FindFirstChild("Humanoid") then 
+        pcall(function() -- fuck errors
+            player.Character.Head.CanCollide = false 
+            player.Character.Torso.CanCollide = false
+        end)
+    end
+end)
+--
+
 
 function esp(mob)
    --mobname
+   
    local mobesp = Drawing.new("Text")
    mobesp.Visible = true
    mobesp.Center = true
@@ -30,10 +64,16 @@ function esp(mob)
    --mobhealth
    local RenderStepped
    RenderStepped = RunService.RenderStepped:Connect(function()
-   if mob:FindFirstChild("Humanoid") and _G.MobEsp then
+   if mob:FindFirstChild("HumanoidRootPart") then
+	   
+  
+   local distance = player:DistanceFromCharacter(mob:FindFirstChild("HumanoidRootPart").Position)
+   if mob:FindFirstChild("Humanoid") and _G.MobEsp and  mob:FindFirstChild("Humanoid").Health > 0 then
    local mob_pos, mob_onscreen = camera:WorldToViewportPoint(mob:FindFirstChild("HumanoidRootPart").Position)
    
-if mob_onscreen then
+
+
+if mob_onscreen and distance < maxDistance then
    mobesp.Position = Vector2.new(mob_pos.X, mob_pos.Y)
    mobesp.Text = mob.Name.. mob.Humanoid.Health
    mobesp.Visible = true
@@ -51,6 +91,7 @@ end
 	  mobespHealth:Remove()
       mobesp:Remove()
       RenderStepped:Disconnect()
+   end
    end
    end)
 end
@@ -70,8 +111,12 @@ end
 end)
 end)
 
+
+
+
+
 workspace:FindFirstChild("Live").ChildAdded:Connect(function(mob)
-if hum.Name == "HumanoidRootPart" and not mob:FindFirstChild("EffectsClient") then
+if mob:FindFirstChild("Humanoid") and not mob:FindFirstChild("EffectsClient") then
 esp(mob)
 end
 end)
@@ -120,13 +165,14 @@ local Window = Library:CreateWindow({
 local Tabs = {
     -- Creates a new tab titled Main
     Main = Window:AddTab('Main'),
+	Esp = Window:AddTab('Esp'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
 -- Groupbox and Tabbox inherit the same functions
 -- except Tabboxes you have to call the functions on a tab (Tabbox:AddTab(name))
-local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Groupbox')
-
+local LeftGroupBox = Tabs.Main:AddLeftGroupbox('MainFunctions')
+local LeftGroupBoxESP = Tabs.Esp:AddLeftGroupbox('Esp')
 -- We can also get our Main tab via the following code:
 -- local LeftGroupBox = Window.Tabs.Main:AddLeftGroupbox('Groupbox')
 
@@ -140,10 +186,9 @@ local Tab2 = TabBox:AddTab('Tab 2')
 
 -- You can now call AddToggle, etc on the tabs you added to the Tabbox
 ]]
+--NOCLIP
 
--- Groupbox:AddToggle
--- Arguments: Index, Options
-LeftGroupBox:AddToggle('MyToggle', {
+LeftGroupBoxESP:AddToggle('MyToggle', {
     Text = 'Mob-Esp',
     Default = false, -- Default value (true / false)
     Tooltip = 'Enable mob esp', -- Information shown when you hover over the toggle
@@ -154,6 +199,55 @@ LeftGroupBox:AddToggle('MyToggle', {
 })
 
 Toggles.MyToggle:SetValue(false)
+
+--esp distance
+LeftGroupBoxESP:AddSlider('MySlider', {
+    Text = 'Esp Distance Regulation',
+    Default = 10,
+    Min = 10,
+    Max = 2000,
+    Rounding = 1,
+    Compact = false,
+
+    Callback = function(Value)
+        maxDistance = Value
+    end
+})
+
+LeftGroupBox:AddSlider('MySlider2', {
+    Text = 'FlySpeed',
+    Default = 10,
+    Min = 1,
+    Max = 200,
+    Rounding = 1,
+    Compact = false,
+
+    Callback = function(Value)
+        flyspeed = Value
+    end
+})
+--esp distance
+
+
+
+
+LeftGroupBox:AddLabel('Noclip'):AddKeyPicker('KeyPicker3', {
+    
+    Default = 'F3',
+    SyncToggleState = false,
+
+    Mode = 'Toggle',
+
+    Text = 'Noclip', 
+    NoUI = false, 
+
+    Callback = function(Value)
+    _G.Noclip = Value
+    end,
+})
+
+Options.KeyPicker3:SetValue({ 'F3', 'Toggle' })
+--NOCLIP
 
 LeftGroupBox:AddLabel('Ai-Destroyer'):AddKeyPicker('KeyPicker', {
     
@@ -210,7 +304,7 @@ task.spawn(function()
         -- example for checking if a keybind is being pressed
         local state = Options.FlySection:GetState()
         if state then
-             rootPart.Velocity = Vector3.new(Mouse.hit.Position - rootPart.Position) + Camera.CFrame.LookVector * 100
+             rootPart.Velocity = Vector3.new(Mouse.hit.Position - rootPart.Position) + Camera.CFrame.LookVector * flyspeed
         end
 
         if Library.Unloaded then break end
